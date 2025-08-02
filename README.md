@@ -1,0 +1,3 @@
+Hi! Sharan here. Since I was young I loved playing Yu-Gi-Oh with my friends, and deckbuilding was always so hard, so I started making this web app to do it for me!
+This is an AI-powered decklist generator for Yu-Gi-Oh. In a previous project, I played around with Flask and Google's free Gemini Generative AI API so I could figure out how to use them. In this project, now that I am getting the hang of them, I went a little deeper with those technologies.
+It is still a work-in-progress, as I am trying to implement new features and technologies to make this thing even more convenient and even cooler!
