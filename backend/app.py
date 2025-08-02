@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
 import os
 import google.generativeai as genai
+import requests
 from dotenv import load_dotenv
 from flask_cors import CORS
+import re
 
 load_dotenv()
 
@@ -11,7 +13,7 @@ CORS(app)
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# List available models and pick one that supports `generate_content`
+# Select Gemini model
 try:
     available_models = genai.list_models()
     for m in available_models:
@@ -21,27 +23,85 @@ try:
             break
 except Exception as e:
     print("❌ Could not list models:", e)
-    selected_model_name = "models/gemini-pro"  # Fallback
+    selected_model_name = "models/gemini-pro"
 
 model = genai.GenerativeModel(selected_model_name)
 
-@app.route('/generate-deck', methods=['POST'])
+@app.route("/generate-deck", methods=["POST"])
 def generate_deck():
-    data = request.json
-    criteria = data.get('criteria')
-
-    prompt = f"""
-    You're an expert Yu-Gi-Oh deck builder. Based on the following user input, build a 40-card main deck list (no duplicates unless allowed by game rules). Only return the card names, one per line.
-
-    User criteria: "{criteria}"
-    """
+    data = request.get_json()
+    criteria = data.get("criteria", "build me a starter deck")
 
     try:
-        response = model.generate_content(prompt)
-        deck_list = response.text.strip().split('\n')
-        return jsonify({'deck': deck_list})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        # Step 1: Ask Gemini for a full deck and theme
+        prompt = (
+            f"Build a complete Yu-Gi-Oh deck (40–60 cards total) based on this request: {criteria}.\n"
+            "Respond with:\n"
+            "1. A brief deck theme or strategy description (2–4 lines).\n"
+            "2. Then, a section titled 'Main Deck:' followed by a list of 40–60 card names in the format 'Card Name x3'.\n"
+        )
+        gemini_response = model.generate_content(prompt)
+        response_text = gemini_response.text.strip()
 
-if __name__ == '__main__':
+        print("🧠 Gemini says:\n", response_text)
+
+        # Step 2: Separate theme and deck list
+        theme_lines = []
+        main_deck_lines = []
+        in_deck_section = False
+
+        for line in response_text.splitlines():
+            if "main deck" in line.lower():
+                in_deck_section = True
+                continue
+            if not in_deck_section:
+                theme_lines.append(line.strip())
+            else:
+                main_deck_lines.append(line.strip())
+
+        theme = "\n".join(theme_lines).strip()
+
+        # Step 3: Parse deck cards with count
+        deck_cards = []
+        for line in main_deck_lines:
+            match = re.match(r"(.*?)(?:\s+x(\d+))?$", line)
+            if match:
+                name = match.group(1).strip(" .-*")
+                count = int(match.group(2)) if match.group(2) else 1
+                if name:
+                    deck_cards.append((name, count))
+
+        print("🧾 Parsed deck cards:", deck_cards)
+
+        # Step 4: Query YGOPro for each unique card
+        selected_cards = []
+        for name, count in deck_cards:
+            try:
+                response = requests.get(f"https://db.ygoprodeck.com/api/v7/cardinfo.php?name={name}")
+                data = response.json()
+                if "data" in data:
+                    card = data["data"][0]
+                    selected_cards.append({
+                        "name": card.get("name"),
+                        "type": card.get("type"),
+                        "desc": card.get("desc"),
+                        "attribute": card.get("attribute"),
+                        "atk": card.get("atk"),
+                        "def": card.get("def"),
+                        "image": card["card_images"][0]["image_url"],
+                        "count": count
+                    })
+            except Exception as fetch_error:
+                print(f"⚠️ Failed to fetch: {name} — {fetch_error}")
+
+        return jsonify({
+            "theme": theme,
+            "cards": selected_cards
+        })
+
+    except Exception as e:
+        print("❌ Error:", e)
+        return jsonify({"error": "Failed to generate deck", "details": str(e)}), 500
+
+if __name__ == "__main__":
     app.run(debug=True)
