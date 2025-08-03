@@ -33,10 +33,10 @@ def generate_deck():
 
     try:
         prompt = (
-            f"Build a complete Yu-Gi-Oh deck (40–60 cards total) based on this request: {criteria}.\n"
+            f"Build a complete Yu-Gi-Oh deck based on this request: {criteria}.\n"
             "Respond with:\n"
             "1. A brief deck theme or strategy description (2–4 lines).\n"
-            "2. Then, a section titled 'Main Deck:' followed by a list of 40–60 card names in the format 'Card Name x3'.\n"
+            "2. Then, a section titled 'Main Deck:' followed by a list of cards of the exact total amount equal to the specified amount of cards in the request, or 40 cards if no amount specified, in the format 'Card Name x3', excluding anything that was requested to exclude, and including anything that was requested to specifially include.\n"
         )
         gemini_response = model.generate_content(prompt)
         response_text = gemini_response.text.strip()
