@@ -79,6 +79,28 @@ button {
   padding: 0 20px;
 }
 
+.decklist-box {
+  margin: 30px auto;
+  max-width: 800px;
+  text-align: left;
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.card-section {
+  margin-bottom: 40px;
+}
+
+.card-section h2 {
+  text-align: left;
+  max-width: 800px;
+  margin: 30px auto 10px;
+  color: #333;
+}
+
+
 .card {
   background-color: white;
   padding: 15px;
@@ -105,6 +127,15 @@ button {
   color: #333;
 }
 
+.decklist-box {
+  margin: 30px auto;
+  max-width: 800px;
+  text-align: left;
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
 
 
 

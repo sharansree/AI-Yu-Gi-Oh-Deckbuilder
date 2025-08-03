@@ -13,7 +13,6 @@ CORS(app)
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# Select Gemini model
 try:
     available_models = genai.list_models()
     for m in available_models:
@@ -33,7 +32,6 @@ def generate_deck():
     criteria = data.get("criteria", "build me a starter deck")
 
     try:
-        # Step 1: Ask Gemini for a full deck and theme
         prompt = (
             f"Build a complete Yu-Gi-Oh deck (40–60 cards total) based on this request: {criteria}.\n"
             "Respond with:\n"
@@ -45,7 +43,6 @@ def generate_deck():
 
         print("🧠 Gemini says:\n", response_text)
 
-        # Step 2: Separate theme and deck list
         theme_lines = []
         main_deck_lines = []
         in_deck_section = False
@@ -61,7 +58,6 @@ def generate_deck():
 
         theme = "\n".join(theme_lines).strip()
 
-        # Step 3: Parse deck cards with count
         deck_cards = []
         for line in main_deck_lines:
             match = re.match(r"(.*?)(?:\s+x(\d+))?$", line)
@@ -73,7 +69,6 @@ def generate_deck():
 
         print("🧾 Parsed deck cards:", deck_cards)
 
-        # Step 4: Query YGOPro for each unique card
         selected_cards = []
         for name, count in deck_cards:
             try:
