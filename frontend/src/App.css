@@ -29,14 +29,29 @@
 }
 
 
-
 .app {
+  position: relative;
+  min-height: 100vh;
   text-align: center;
   font-family: 'Segoe UI', sans-serif;
   padding: 20px;
-  background-color: #f0f2f5;
-  min-height: 100vh;
+  background: url("./tcgpic.jpg") center center / cover no-repeat fixed;
 }
+
+.app::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5); /* darken overlay */
+  z-index: 0;
+}
+
+.app > * {
+  position: relative;
+  z-index: 1;
+}
+
+
 
 input {
   padding: 10px;
@@ -99,6 +114,25 @@ button {
   margin: 30px auto 10px;
   color: #333;
 }
+
+h1 {
+  font-size: 3rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+
+  /* Gradient text */
+  background: linear-gradient(90deg, #ffcc00, #ff0066, #00ccff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  /* Glow effect */
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8),
+               0 0 20px rgba(255, 0, 255, 0.6),
+               0 0 40px rgba(0, 200, 255, 0.8);
+}
+
 
 
 .card {

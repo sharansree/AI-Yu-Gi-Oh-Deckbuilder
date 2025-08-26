@@ -5,8 +5,10 @@ function App() {
   const [criteria, setCriteria] = useState("");
   const [cards, setCards] = useState([]);
   const [theme, setTheme] = useState("");
-  const [deckText, setDeckText] = useState("");
+  const [decklist, setDecklist] = useState("");
   const [loading, setLoading] = useState(false);
+  const [game, setGame] = useState("yugioh");
+  const [copied, setCopied] = useState(false); // ⬅️ NEW
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -14,50 +16,61 @@ function App() {
       const response = await fetch("http://localhost:5000/generate-deck", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ criteria }),
+        body: JSON.stringify({ criteria, game }),
       });
 
       const data = await response.json();
 
       if (data.cards) {
         setTheme(data.theme);
+        setDecklist(data.decklist);
         setCards(data.cards);
-        const text = data.cards
-          .map((card) => `${card.name} x${card.count}`)
-          .join("\n");
-        setDeckText(text);
       } else {
         setTheme("No cards found.");
+        setDecklist("");
         setCards([]);
-        setDeckText("");
       }
     } catch (error) {
       console.error("Error generating deck:", error);
       setTheme("Error connecting to backend.");
-      setDeckText("");
+      setDecklist("");
     } finally {
       setLoading(false);
     }
   };
 
+  // ⬅️ NEW: Copy to clipboard function
+  const handleCopyDecklist = () => {
+    navigator.clipboard.writeText(decklist);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000); // reset after 2s
+  };
+
   return (
     <div className="app">
-      <h1>🃏 AI-Powered Yu-Gi-Oh Deck Builder</h1>
+      <h1>AI-Powered TCG Deck Builder</h1>
 
-      <input
-        type="text"
-        placeholder="e.g., dragon deck with traps"
-        value={criteria}
-        onChange={(e) => setCriteria(e.target.value)}
-      />
+      <div className="controls">
+        <select value={game} onChange={(e) => setGame(e.target.value)}>
+          <option value="yugioh">Yu-Gi-Oh</option>
+          <option value="pokemon">Pokémon</option>
+        </select>
 
-      <button onClick={handleGenerate} disabled={loading}>
-        {loading ? "Generating..." : "Generate Deck"}
-      </button>
+        <input
+          type="text"
+          placeholder="e.g., dragon deck with traps"
+          value={criteria}
+          onChange={(e) => setCriteria(e.target.value)}
+        />
+
+        <button onClick={handleGenerate} disabled={loading}>
+          {loading ? "Generating..." : "Generate Deck"}
+        </button>
+      </div>
 
       {theme && (
         <div className="theme-box">
-          <h2>🧠 Deck Theme</h2>
+          <h2>Deck Theme</h2>
           <p
             style={{
               whiteSpace: "pre-wrap",
@@ -70,79 +83,56 @@ function App() {
         </div>
       )}
 
-      {deckText && (
+      {decklist && (
         <div className="decklist-box">
-          <h2>📜 Decklist</h2>
+          <h2>📋 Copyable Decklist</h2>
           <textarea
-            value={deckText}
             readOnly
-            rows={cards.length}
-            style={{
-              width: "100%",
-              maxWidth: "800px",
-              fontFamily: "monospace",
-              fontSize: "14px",
-              padding: "10px",
-              borderRadius: "6px",
-              border: "1px solid #ccc",
-              backgroundColor: "#fefefe",
-              marginBottom: "10px",
-              display: "block",
-            }}
+            value={decklist}
+            style={{ width: "100%", height: "200px", fontFamily: "monospace" }}
           />
           <button
-            onClick={() => {
-              navigator.clipboard.writeText(deckText);
-              alert("Decklist copied to clipboard!");
+            onClick={handleCopyDecklist}
+            className="copy-btn"
+            style={{
+              marginTop: "10px",
+              padding: "8px 16px",
+              backgroundColor: "#2563eb",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
             }}
           >
-            📋 Copy Decklist
+            {copied ? "✅ Copied!" : "Copy Decklist"}
           </button>
         </div>
       )}
 
-      {["Monster", "Spell", "Trap"].map((type) => {
-        const emoji = type === "Monster" ? "🧙" : type === "Spell" ? "📘" : "💥";
-        const sectionCards = cards.filter((card) =>
-          card.type.toLowerCase().includes(type.toLowerCase())
-        );
-
-        return sectionCards.length > 0 ? (
-          <div key={type} className="card-section">
-            <h2>
-              {emoji} {type} Cards
-            </h2>
-            <div className="card-grid">
-              {sectionCards.map((card, idx) => (
-                <div className="card" key={idx}>
-                  <img src={card.image} alt={card.name} />
-                  <h3>
-                    {card.name}{" "}
-                    {card.count && Number(card.count) > 1
-                      ? `x${card.count}`
-                      : ""}
-                  </h3>
-
-                  <p>
-                    <strong>Type:</strong> {card.type}
-                  </p>
-                  {card.attribute && (
-                    <p>
-                      <strong>Attribute:</strong> {card.attribute}
-                    </p>
-                  )}
-                  {card.atk !== null && card.def !== null && (
-                    <p>
-                      <strong>ATK/DEF:</strong> {card.atk} / {card.def}
-                    </p>
-                  )}
-                  <p className="desc">{card.desc}</p>
-                </div>
-              ))}
-            </div>
+      <div className="card-grid">
+        {cards.map((card, idx) => (
+          <div className="card" key={idx}>
+            <img src={card.image} alt={card.name} />
+            <h3>
+              {card.name} {card.count > 1 && `x${card.count}`}
+            </h3>
+            <p>
+              <strong>Type:</strong> {card.type}
+            </p>
+            {card.attribute && (
+              <p>
+                <strong>Attribute:</strong> {card.attribute}
+              </p>
+            )}
+            {card.atk !== null && card.def !== null && (
+              <p>
+                <strong>ATK/DEF:</strong> {card.atk} / {card.def}
+              </p>
+            )}
+            <p className="desc">{card.desc}</p>
           </div>
-        ) : null;
-      })}
+        ))}
+      </div>
     </div>
   );
 }
